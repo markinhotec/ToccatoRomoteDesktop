@@ -2,6 +2,15 @@
 
 Aplicativo desktop Windows em português para organizar clientes, conexões e credenciais em um cofre **local individual**. Repositório do projeto ToccatoRemoteDesktop (nome existente do repositório: `ToccatoRomoteDesktop`).
 
+## Downloads da v1.0.0
+
+- [Instalador Windows](releases/v1.0.0/ToccatoDesktopManager-1.0.0-Setup.exe)
+- [Pacote completo: instalador, portátil, fontes e guia](releases/v1.0.0/ToccatoDesktopManager_1_0_0_Completo.zip)
+- [Versão portátil](releases/v1.0.0/ToccatoDesktopManager-1.0.0-Portable.zip)
+- [Checksums SHA-256](releases/v1.0.0/SHA256SUMS.txt)
+
+Os arquivos desta entrega são preservados na pasta `releases/v1.0.0`. O pacote completo mantém exatamente os bytes da entrega original. A permissão de publicação da integração foi restabelecida em 06/11/2026. O registro de validação incluído no pacote descreve a situação anterior à publicação; consulte Actions para os testes Windows posteriores.
+
 ## O que está implementado
 
 - Clientes, pastas/subpastas, favoritos, recentes, tags e busca por `Ctrl+Space`.

@@ -1,0 +1,14 @@
+artifacts/
+dist/
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.tdmv
+*.tdmv.*
+*.bak
+*.tmp
+*.lock
+*.log
+local-tools/

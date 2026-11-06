@@ -1,0 +1,45 @@
+TOCCATO DESKTOP MANAGER 1.0.0
+============================
+
+INSTALAR
+Execute ToccatoDesktopManager-1.0.0-Setup.exe e siga o assistente.
+Instalação por usuário, sem exigir administrador.
+Se necessário, instale o .NET Framework 4.8 pela página oficial indicada.
+
+PORTÁTIL
+Extraia TODO o ZIP em uma pasta e abra ToccatoDesktopManager.exe.
+O .NET Framework 4.8 também é necessário no modo portátil.
+
+PRIMEIRO ACESSO
+1. Crie um cofre .tdmv com senha-mestra de pelo menos 12 caracteres.
+2. Adicione clientes, credenciais e conexões.
+3. Configure clientes externos em Configurações, se for usar esses protocolos.
+4. Faça um backup criptografado pelo menu Cofre.
+
+GUIA
+Abra Guia_TDM_1_0.html para instruções, requisitos e matriz de funcionalidades.
+Para conhecer o visual sem criar um cofre:
+ToccatoDesktopManager.exe --demo
+
+ESCOPO DESTA VERSÃO
+Aplicativo local individual: clientes, pastas, busca, favoritos, cofre
+criptografado, RDP integrado, lançadores externos, VPN do Windows,
+diagnósticos, scripts locais com confirmação e auditoria local.
+
+PAM/JIT, RBAC de equipe, MFA/SSO, gravação de sessões, SQL compartilhado,
+integrações com cofres externos e APIs de nuvem não estão implementados.
+Não há suporte nativo a 150 tecnologias nesta v1.0.
+
+COMPATIBILIDADE
+Alvo de homologação: Windows 10/11 e Windows Server 2016 ou superior,
+com interface gráfica e .NET Framework 4.8+. AnyCPU para x86 e x64.
+Windows 7 SP1/8.1 e servidores antigos podem atender ao runtime,
+mas não foram homologados e estão fora da matriz recomendada.
+Windows XP, Vista, 8.0, Server Core e ARM nativo não são suportados.
+Uma versão universal para qualquer Windows não é tecnicamente garantida.
+
+SEGURANÇA
+Guarde a senha-mestra: não existe recuperação automática.
+A criptografia é local, em repouso; não é um serviço PAM empresarial.
+Sessões remotas dependem da rede, do servidor e dos aplicativos instalados.
+Esta entrega precisa de homologação no ambiente de destino.

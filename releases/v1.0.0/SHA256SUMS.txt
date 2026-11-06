@@ -1,0 +1,3 @@
+affa4222e804cbf52f550e29e720f78f953e8ee53f801f8e05be6898f6a006bf  ToccatoDesktopManager_1_0_0_Completo.zip
+91d2fa8fd4b31cf9a9297d4d41b901078de61df472c0fe17c9319717c1b385cc  ToccatoDesktopManager-1.0.0-Setup.exe
+9d4df161b5f88f974f72903b5bcf26a0d7cca381c8b43e689f8b7b0d4e5e8f64  ToccatoDesktopManager-1.0.0-Portable.zip
