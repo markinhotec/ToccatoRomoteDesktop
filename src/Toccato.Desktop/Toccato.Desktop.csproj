@@ -6,6 +6,10 @@
     <OutputPath>bin\$(Configuration)\</OutputPath><Optimize>true</Optimize><ApplicationManifest>app.manifest</ApplicationManifest><ApplicationIcon>..\..\assets\tdm.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup><Reference Include="System" /><Reference Include="System.Core" /><Reference Include="System.Drawing" /><Reference Include="System.Windows.Forms" /><Reference Include="System.Runtime.Serialization" /><Reference Include="Microsoft.CSharp" /></ItemGroup>
-  <ItemGroup><Compile Include="Model.cs" /><Compile Include="Vault.cs" /><Compile Include="Connections.cs" /><Compile Include="Dialogs.cs" /><Compile Include="MainForm.cs" /><Compile Include="Program.cs" /><None Include="App.config" /></ItemGroup>
+  <ItemGroup><Compile Include="Model.cs" /><Compile Include="Vault.cs" /><Compile Include="Connections.cs" /><Compile Include="Dialogs.cs" /><Compile Include="MainForm.cs" /><Compile Include="Program.cs" /><Compile Include="Appearance.cs" /><Compile Include="UiTheme.cs" /><Compile Include="ErrorDiagnostics.cs" /><None Include="App.config" /></ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\logo_toccato.png"><LogicalName>Toccato.Desktop.BrandLogo.png</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="..\..\assets\tdm.ico"><LogicalName>Toccato.Desktop.BrandIcon.ico</LogicalName></EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

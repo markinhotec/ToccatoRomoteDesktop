@@ -1,7 +1,7 @@
 ﻿param([switch]$SkipInstaller, [switch]$SkipTests)
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
-$out = Join-Path $root 'artifacts'
+$out = Join-Path $root 'artifacts\1.0.1'
 $portable = Join-Path $out 'portable'
 New-Item -ItemType Directory -Force -Path $portable | Out-Null
 $framework = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
@@ -13,14 +13,14 @@ if ($release -lt 528040) { throw 'O projeto requer .NET Framework 4.8 ou superio
 $source = Join-Path $root 'src\Toccato.Desktop'
 $exe = Join-Path $portable 'ToccatoDesktopManager.exe'
 $references = @('System.dll', 'System.Core.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll', 'System.Runtime.Serialization.dll', 'Microsoft.CSharp.dll')
-$arguments = @('/nologo', '/optimize+', '/target:winexe', '/platform:anycpu', '/langversion:5', '/codepage:65001', "/out:$exe", "/win32manifest:$source\app.manifest", "/win32icon:$root\assets\tdm.ico")
+$arguments = @('/nologo', '/optimize+', '/target:winexe', '/platform:anycpu', '/langversion:5', '/codepage:65001', "/out:$exe", "/win32manifest:$source\app.manifest", "/win32icon:$root\assets\tdm.ico", "/resource:$root\assets\logo_toccato.png,Toccato.Desktop.BrandLogo.png", "/resource:$root\assets\tdm.ico,Toccato.Desktop.BrandIcon.ico")
 foreach ($reference in $references) { $arguments += "/reference:$(Join-Path $framework $reference)" }
 $arguments += @(Get-ChildItem $source -Filter '*.cs' | ForEach-Object FullName)
 & $compiler $arguments
 if ($LASTEXITCODE -ne 0) { throw 'Falha na compilação do aplicativo.' }
 Copy-Item (Join-Path $source 'App.config') "$exe.config" -Force
 Copy-Item (Join-Path $root 'assets\tdm.ico') $portable -Force
-Copy-Item (Join-Path $root 'docs\Guia_TDM_1_0.html') $portable -Force
+Copy-Item (Join-Path $root 'docs\Guia_TDM_1_0_1.html') $portable -Force
 Copy-Item (Join-Path $root 'docs\LEIA-ME.txt') $portable -Force
 
 if (-not $SkipTests) {
@@ -36,9 +36,14 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw 'Falha na compilação do teste da interface.' }
     & $smokeExe
     if ($LASTEXITCODE -ne 0) { throw 'O teste da interface falhou.' }
+    $appearanceExe = Join-Path $out 'AppearanceTests.exe'
+    & $compiler '/nologo' '/target:exe' '/langversion:5' '/codepage:65001' "/out:$appearanceExe" "/reference:$exe" "/reference:$framework\System.Windows.Forms.dll" "/reference:$framework\System.Drawing.dll" (Join-Path $root 'tests\AppearanceTests.cs')
+    if ($LASTEXITCODE -ne 0) { throw 'Falha na compilação dos testes de aparência.' }
+    & $appearanceExe
+    if ($LASTEXITCODE -ne 0) { throw 'Os testes de aparência e regressão falharam.' }
 }
 
-$zip = Join-Path $out 'ToccatoDesktopManager-1.0.0-Portable.zip'
+$zip = Join-Path $out 'ToccatoDesktopManager-1.0.1-Portable.zip'
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path "$portable\*" -DestinationPath $zip
 if (-not $SkipInstaller) {
@@ -46,10 +51,10 @@ if (-not $SkipInstaller) {
     if (-not (Test-Path $nsis)) { $command = Get-Command makensis.exe -ErrorAction SilentlyContinue; if ($command) { $nsis = $command.Source } }
     if (-not (Test-Path $nsis)) { throw 'Instale NSIS 3 para gerar o instalador, ou use -SkipInstaller para gerar somente o portátil.' }
     Push-Location (Join-Path $root 'installer')
-    try { & $nsis "/DSOURCE=$portable" "/DOUTPUT=$out\ToccatoDesktopManager-1.0.0-Setup.exe" 'ToccatoDesktopManager.nsi'; if ($LASTEXITCODE -ne 0) { throw 'Falha ao gerar o instalador.' } }
+    try { & $nsis "/DSOURCE=$portable" "/DOUTPUT=$out\ToccatoDesktopManager-1.0.1-Setup.exe" 'ToccatoDesktopManager.nsi'; if ($LASTEXITCODE -ne 0) { throw 'Falha ao gerar o instalador.' } }
     finally { Pop-Location }
 }
-$packages = @(Get-ChildItem $out -File | Where-Object { $_.Name -match '^ToccatoDesktopManager-1\.0\.0-(Setup\.exe|Portable\.zip)$' })
+$packages = @(Get-ChildItem $out -File | Where-Object { $_.Name -match '^ToccatoDesktopManager-1\.0\.1-(Setup\.exe|Portable\.zip)$' })
 $hashes = $packages | ForEach-Object { "$( (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)" }
-$hashes | Set-Content (Join-Path $out 'SHA256SUMS_1_0_0.txt') -Encoding ASCII
+$hashes | Set-Content (Join-Path $out 'SHA256SUMS_1_0_1.txt') -Encoding ASCII
 Write-Host "Pacotes criados em $out"

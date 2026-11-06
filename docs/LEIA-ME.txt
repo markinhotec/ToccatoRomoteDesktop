@@ -1,14 +1,23 @@
-TOCCATO DESKTOP MANAGER 1.0.0
+TOCCATO DESKTOP MANAGER 1.0.1
 ============================
 
 INSTALAR
-Execute ToccatoDesktopManager-1.0.0-Setup.exe e siga o assistente.
+Execute ToccatoDesktopManager-1.0.1-Setup.exe e siga o assistente.
 Instalação por usuário, sem exigir administrador.
 Se necessário, instale o .NET Framework 4.8 pela página oficial indicada.
 
 PORTÁTIL
 Extraia TODO o ZIP em uma pasta e abra ToccatoDesktopManager.exe.
 O .NET Framework 4.8 também é necessário no modo portátil.
+
+TEMAS E APARENCIA
+Use Exibir > Temas e aparencia para escolher Azul institucional, Azul e
+ciano ou Azul e grafite, nos modos Claro, Escuro e Automatico (Windows).
+A escolha e salva para seu usuario e aplicada sem reiniciar.
+
+ATUALIZAR DA V1.0.0
+Feche o aplicativo, execute o instalador e abra seu cofre .tdmv existente.
+O formato e a senha do cofre permanecem compativeis.
 
 PRIMEIRO ACESSO
 1. Crie um cofre .tdmv com senha-mestra de pelo menos 12 caracteres.
@@ -17,7 +26,7 @@ PRIMEIRO ACESSO
 4. Faça um backup criptografado pelo menu Cofre.
 
 GUIA
-Abra Guia_TDM_1_0.html para instruções, requisitos e matriz de funcionalidades.
+Abra Guia_TDM_1_0_1.html para instruções, requisitos e matriz de funcionalidades.
 Para conhecer o visual sem criar um cofre:
 ToccatoDesktopManager.exe --demo
 

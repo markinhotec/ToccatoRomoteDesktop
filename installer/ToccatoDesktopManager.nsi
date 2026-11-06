@@ -3,10 +3,10 @@ Unicode true
 !include "LogicLib.nsh"
 !include "x64.nsh"
 !ifndef SOURCE
-  !define SOURCE "..\artifacts\portable"
+  !define SOURCE "..\artifacts\1.0.1\portable"
 !endif
 !ifndef OUTPUT
-  !define OUTPUT "..\artifacts\ToccatoDesktopManager-1.0.0-Setup.exe"
+  !define OUTPUT "..\artifacts\1.0.1\ToccatoDesktopManager-1.0.1-Setup.exe"
 !endif
 Name "Toccato Desktop Manager"
 OutFile "${OUTPUT}"
@@ -14,20 +14,20 @@ InstallDir "$LOCALAPPDATA\Programs\Toccato Desktop Manager"
 InstallDirRegKey HKCU "Software\Toccato\DesktopManager" "InstallDir"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
-BrandingText "Toccato Desktop Manager 1.0.0"
-VIProductVersion "1.0.0.0"
+BrandingText "Toccato Desktop Manager 1.0.1"
+VIProductVersion "1.0.1.0"
 VIAddVersionKey "ProductName" "Toccato Desktop Manager"
 VIAddVersionKey "FileDescription" "Instalador Toccato Desktop Manager"
-VIAddVersionKey "FileVersion" "1.0.0.0"
-VIAddVersionKey "ProductVersion" "1.0.0.0"
+VIAddVersionKey "FileVersion" "1.0.1.0"
+VIAddVersionKey "ProductVersion" "1.0.1.0"
 VIAddVersionKey "LegalCopyright" "Toccato"
 !define MUI_ABORTWARNING
 !define MUI_ICON "..\assets\tdm.ico"
 !define MUI_UNICON "..\assets\tdm.ico"
-!define MUI_WELCOMEPAGE_TITLE "Toccato Desktop Manager 1.0"
+!define MUI_WELCOMEPAGE_TITLE "Toccato Desktop Manager 1.0.1"
 !define MUI_WELCOMEPAGE_TEXT "Organize clientes, conexões remotas e credenciais em um workspace local.$\r$\n$\r$\nO TDM será instalado apenas para o seu usuário. Seus cofres não são removidos na desinstalação.$\r$\n$\r$\nRequer .NET Framework 4.8 ou superior."
 !insertmacro MUI_PAGE_WELCOME
-!define MUI_LICENSEPAGE_HEADER_TEXT "Informações da versão 1.0"
+!define MUI_LICENSEPAGE_HEADER_TEXT "Informações da versão 1.0.1"
 !define MUI_LICENSEPAGE_HEADER_SUBTEXT "Leia os requisitos e o escopo desta entrega."
 !define MUI_LICENSEPAGE_TEXT_TOP "Informações de instalação e uso do Toccato Desktop Manager:"
 !define MUI_LICENSEPAGE_TEXT_BOTTOM "Clique em Continuar para prosseguir com a instalação."
@@ -81,20 +81,21 @@ Section "Toccato Desktop Manager (obrigatório)" MainSection
   File "${SOURCE}\ToccatoDesktopManager.exe"
   File "${SOURCE}\ToccatoDesktopManager.exe.config"
   File "${SOURCE}\tdm.ico"
-  File "${SOURCE}\Guia_TDM_1_0.html"
+  File "${SOURCE}\Guia_TDM_1_0_1.html"
   File "${SOURCE}\LEIA-ME.txt"
   ${If} ${Errors}
     MessageBox MB_ICONSTOP "A instalação não conseguiu copiar todos os arquivos. Verifique permissões e espaço livre."
     Abort
   ${EndIf}
+  Delete "$INSTDIR\Guia_TDM_1_0.html"
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
   CreateDirectory "$SMPROGRAMS\Toccato Desktop Manager"
   CreateShortCut "$SMPROGRAMS\Toccato Desktop Manager\Toccato Desktop Manager.lnk" "$INSTDIR\ToccatoDesktopManager.exe" "" "$INSTDIR\tdm.ico"
-  CreateShortCut "$SMPROGRAMS\Toccato Desktop Manager\Guia de uso.lnk" "$INSTDIR\Guia_TDM_1_0.html"
+  CreateShortCut "$SMPROGRAMS\Toccato Desktop Manager\Guia de uso.lnk" "$INSTDIR\Guia_TDM_1_0_1.html"
   CreateShortCut "$SMPROGRAMS\Toccato Desktop Manager\Desinstalar.lnk" "$INSTDIR\Desinstalar.exe"
   WriteRegStr HKCU "Software\Toccato\DesktopManager" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "DisplayName" "Toccato Desktop Manager"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "DisplayVersion" "1.0.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "DisplayVersion" "1.0.1"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "Publisher" "Toccato"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "UninstallString" '$\"$INSTDIR\Desinstalar.exe$\"'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ToccatoDesktopManager" "QuietUninstallString" '$\"$INSTDIR\Desinstalar.exe$\" /S'
@@ -113,6 +114,7 @@ Section "Uninstall"
   Delete "$INSTDIR\ToccatoDesktopManager.exe"
   Delete "$INSTDIR\ToccatoDesktopManager.exe.config"
   Delete "$INSTDIR\tdm.ico"
+  Delete "$INSTDIR\Guia_TDM_1_0_1.html"
   Delete "$INSTDIR\Guia_TDM_1_0.html"
   Delete "$INSTDIR\LEIA-ME.txt"
   Delete "$INSTDIR\Desinstalar.exe"

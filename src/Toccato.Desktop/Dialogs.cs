@@ -7,14 +7,21 @@ using System.Windows.Forms;
 
 namespace Toccato.Desktop
 {
-    public static class Ui
+    public static partial class Ui
     {
-        public static readonly Color Navy = Color.FromArgb(17, 32, 54), Blue = Color.FromArgb(35, 99, 235), Teal = Color.FromArgb(14, 150, 128), Ink = Color.FromArgb(26, 41, 63), Muted = Color.FromArgb(108, 123, 143), Canvas = Color.FromArgb(244, 247, 251), Line = Color.FromArgb(224, 231, 240);
+        public static Color Navy { get { return ThemeManager.Current.Sidebar; } }
+        public static Color Blue { get { return ThemeManager.Current.Accent; } }
+        public static Color Teal { get { return Color.FromArgb(14, 150, 128); } }
+        public static Color Ink { get { return ThemeManager.Current.Text; } }
+        public static Color Muted { get { return ThemeManager.Current.Muted; } }
+        public static Color Canvas { get { return ThemeManager.Current.Canvas; } }
+        public static Color Line { get { return ThemeManager.Current.Border; } }
+        public static Color Surface { get { return ThemeManager.Current.Surface; } }
         public static Font Font(float size = 10, FontStyle style = FontStyle.Regular) { return new Font("Segoe UI", size, style); }
         public static Button Button(string text, EventHandler click, bool primary = false)
         {
-            var b = new Button { Text = text, AutoSize = false, Width = 146, Height = 38, FlatStyle = FlatStyle.Flat, Font = Font(9.5f, FontStyle.Bold), BackColor = primary ? Blue : Color.White, ForeColor = primary ? Color.White : Ink, Cursor = Cursors.Hand, Margin = new Padding(4) };
-            b.FlatAppearance.BorderColor = primary ? Blue : Line; b.Click += click; return b;
+            var b = new Button { Text = text, AutoSize = false, Width = 146, Height = 38, FlatStyle = FlatStyle.Flat, Font = Font(9.5f, FontStyle.Bold), Cursor = Cursors.Hand, Margin = new Padding(4), UseVisualStyleBackColor = false, Tag = primary ? ThemeRole.PrimaryButton : ThemeRole.SecondaryButton };
+            StyleButton(b); b.EnabledChanged += (s, e) => StyleButton(b); b.Click += click; return b;
         }
         public static TextBox Text(string value = "", bool secret = false, bool multiline = false)
         {
@@ -22,13 +29,13 @@ namespace Toccato.Desktop
         }
         public static Label Label(string text, float size = 10, Color? color = null, bool bold = false)
         {
-            return new Label { Text = text, Font = Font(size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = color ?? Ink, AutoSize = true, BackColor = Color.Transparent };
+            return new Label { Text = text, Font = Font(size, bold ? FontStyle.Bold : FontStyle.Regular), ForeColor = color ?? Ink, AutoSize = true, BackColor = Color.Transparent, Tag = color.HasValue && color.Value.ToArgb() == Muted.ToArgb() ? ThemeRole.MutedText : ThemeRole.BodyText };
         }
-        public static void Error(IWin32Window owner, Exception error)
+        public static void Error(IWin32Window owner, Exception error, string operation = "Operação do TDM")
         {
-            // Only application-controlled validation errors reach the dialog. Never log exception payloads or credentials.
-            string message = error is System.Security.Cryptography.CryptographicException ? "Senha incorreta ou cofre alterado. Use uma cópia de backup se necessário." : error is ArgumentException || error is InvalidDataException || error is FileNotFoundException || error is InvalidOperationException || error is TimeoutException ? error.Message : error is IOException ? "Não foi possível acessar ou salvar o arquivo. Verifique permissões, espaço e se o cofre já está aberto em outro processo." : "A operação não foi concluída. Verifique o destino e os componentes instalados.";
-            MessageBox.Show(owner, message, "Toccato Desktop Manager", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            var diagnostic = ErrorDiagnostics.Capture(error, operation);
+            string message = error is System.Security.Cryptography.CryptographicException ? "Senha incorreta ou cofre alterado. Use uma cópia de backup se necessário." : error is ArgumentException || error is InvalidDataException || error is FileNotFoundException || error is InvalidOperationException || error is TimeoutException ? error.Message : error is IOException ? "Não foi possível acessar ou salvar o arquivo. Verifique permissões, espaço e se o cofre já está aberto em outro processo." : "O aplicativo encontrou um erro interno. O diagnóstico abaixo identifica a falha sem incluir senhas ou dados do cadastro.";
+            using (var dialog = new ThemedMessageForm(message, operation, MessageBoxButtons.OK, diagnostic)) dialog.ShowDialog(owner);
         }
         public static DataGridView Grid()
         {
@@ -43,22 +50,22 @@ namespace Toccato.Desktop
         }
     }
 
-    public class EditorForm : Form
+    public class EditorForm : ThemedForm
     {
         protected TableLayoutPanel Fields;
         protected FlowLayoutPanel Actions;
         protected Button SaveButton;
         public EditorForm(string title, string subtitle, int height = 600)
         {
-            Text = title + " — TDM"; Font = Ui.Font(); ForeColor = Ui.Ink; BackColor = Color.White; StartPosition = FormStartPosition.CenterParent; MinimumSize = new Size(620, 350); ClientSize = new Size(720, height); ShowInTaskbar = false; MaximizeBox = false;
-            var head = new Panel { Dock = DockStyle.Top, Height = 94, Padding = new Padding(26, 16, 26, 10), BackColor = Ui.Canvas };
+            Text = title + " — TDM"; Font = Ui.Font(); ForeColor = Ui.Ink; BackColor = Ui.Surface; StartPosition = FormStartPosition.CenterParent; MinimumSize = new Size(620, 350); ClientSize = new Size(720, height); ShowInTaskbar = false; MaximizeBox = false;
+            var head = new Panel { Dock = DockStyle.Top, Height = 94, Padding = new Padding(26, 16, 26, 10), BackColor = Ui.Canvas, Tag = ThemeRole.Canvas };
             var titleLabel = Ui.Label(title, 18, null, true); titleLabel.Location = new Point(24, 14); head.Controls.Add(titleLabel);
             var sub = Ui.Label(subtitle, 9, Ui.Muted); sub.Location = new Point(26, 53); sub.MaximumSize = new Size(650, 36); head.Controls.Add(sub);
             var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(24, 14, 24, 18) };
             Fields = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(0, 0, 4, 0) };
             Fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 158)); Fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); body.Controls.Add(Fields);
-            Actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 66, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16, 10, 16, 10), BackColor = Ui.Canvas };
-            SaveButton = Ui.Button("Salvar", (s, e) => { try { if (Save()) DialogResult = DialogResult.OK; } catch (Exception ex) { Ui.Error(this, ex); } }, true);
+            Actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 66, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16, 10, 16, 10), BackColor = Ui.Canvas, Tag = ThemeRole.Canvas };
+            SaveButton = Ui.Button("Salvar", (s, e) => { try { if (Save()) DialogResult = DialogResult.OK; } catch (Exception ex) { Ui.Error(this, ex, title); } }, true);
             var cancel = Ui.Button("Cancelar", (s, e) => { DialogResult = DialogResult.Cancel; });
             Actions.Controls.Add(SaveButton); Actions.Controls.Add(cancel); AcceptButton = SaveButton; CancelButton = cancel;
             Controls.Add(body); Controls.Add(Actions); Controls.Add(head);
@@ -73,7 +80,7 @@ namespace Toccato.Desktop
         }
         protected ComboBox Choice(object[] values)
         {
-            var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Font = Ui.Font(), Height = 30 }; c.Items.AddRange(values); if (c.Items.Count > 0) c.SelectedIndex = 0; return c;
+            var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Font = Ui.Font(), Height = 30 }; Ui.ConfigureCombo(c); c.Items.AddRange(values); if (c.Items.Count > 0) c.SelectedIndex = 0; return c;
         }
     }
 
@@ -92,6 +99,7 @@ namespace Toccato.Desktop
             Add("Modo de acesso", create); Add("Arquivo .tdmv", path); Add("", choose); Add("Nome do cofre", title); Add("Senha-mestra", password); Add("Repita a senha", confirm);
             var help = Ui.Label("A senha-mestra não pode ser recuperada. Guarde-a em local seguro e mantenha backups. O cofre funciona localmente, inclusive offline.", 9, Ui.Muted); help.MaximumSize = new Size(440, 0); Add("Antes de começar", help);
             SaveButton.Text = "Desbloquear";
+            Actions.Controls.Add(Ui.Button("Temas...", (s, e) => { using (var d = new AppearanceDialog()) d.ShowDialog(this); }));
             // Replace the base click handler by overriding Save and running the asynchronous unlock there.
             create.CheckedChanged += (s, e) => SetMode(); SetMode();
             FormClosing += (s, e) => { if (busy) e.Cancel = true; };
@@ -181,7 +189,7 @@ namespace Toccato.Desktop
             port = new NumericUpDown { Minimum = 1, Maximum = 65535, Value = Record.Port, Font = Ui.Font(), Height = 30 };
             credential = Choice(new object[] { new CredentialChoice { Id = "", Name = "Nenhuma — solicitar no cliente remoto" } }.Concat(data.Credentials.Select(x => (object)new CredentialChoice { Id = x.Id, Name = x.Name })).ToArray());
             foreach (CredentialChoice item in credential.Items) if (item.Id == Record.CredentialId) credential.SelectedItem = item;
-            kind.SelectedIndexChanged += (s, e) => port.Value = Guard.DefaultPort((ConnectionKind)kind.SelectedItem);
+            kind.SelectedIndexChanged += (s, e) => { if (kind.SelectedItem is ConnectionKind) port.Value = Guard.DefaultPort((ConnectionKind)kind.SelectedItem); };
             admin = new CheckBox { Text = "Sessão administrativa RDP", Checked = Record.AdminSession, AutoSize = true };
             multimon = new CheckBox { Text = "RDP em todos os monitores (mstsc externo, login no Windows)", Checked = Record.MultiMonitor, AutoSize = true };
             favorite = new CheckBox { Text = "Adicionar aos favoritos", Checked = Record.Favorite, AutoSize = true };
@@ -192,10 +200,17 @@ namespace Toccato.Desktop
         }
         protected override bool Save()
         {
-            Record.Name = name.Text.Trim(); Record.Host = host.Text.Trim(); Record.Kind = (ConnectionKind)kind.SelectedItem; Record.Port = (int)port.Value; Record.ClientId = ((ClientRecord)client.SelectedItem).Id;
-            Record.Folder = folder.Text.Trim().Trim('/'); Record.CredentialId = ((CredentialChoice)credential.SelectedItem).Id; Record.UserName = user.Text.Trim(); Record.Domain = domain.Text.Trim(); Record.Tags = tags.Text.Trim(); Record.Notes = notes.Text; Record.VpnProfile = vpn.Text.Trim();
-            Record.AdminSession = admin.Checked; Record.MultiMonitor = multimon.Checked; Record.Favorite = favorite.Checked; Record.BeforeScript = before.Text; Record.AfterScript = after.Text;
-            Guard.Connection(Record); return true;
+            var selectedClient = client.SelectedItem as ClientRecord;
+            if (selectedClient == null) throw new ArgumentException("Selecione o cliente da conexão.");
+            if (!(kind.SelectedItem is ConnectionKind)) throw new ArgumentException("Selecione o protocolo da conexão.");
+            var selectedCredential = credential.SelectedItem as CredentialChoice;
+            if (selectedCredential == null && credential.Items.Count == 1) selectedCredential = credential.Items[0] as CredentialChoice;
+            if (selectedCredential == null) throw new ArgumentException("Selecione uma credencial ou a opção Nenhuma.");
+            var draft = Json.Clone(Record);
+            draft.Name = name.Text.Trim(); draft.Host = host.Text.Trim(); draft.Kind = (ConnectionKind)kind.SelectedItem; draft.Port = (int)port.Value; draft.ClientId = selectedClient.Id;
+            draft.Folder = folder.Text.Trim().Trim('/'); draft.CredentialId = selectedCredential.Id ?? ""; draft.UserName = user.Text.Trim(); draft.Domain = domain.Text.Trim(); draft.Tags = tags.Text.Trim(); draft.Notes = notes.Text; draft.VpnProfile = vpn.Text.Trim();
+            draft.AdminSession = admin.Checked; draft.MultiMonitor = multimon.Checked; draft.Favorite = favorite.Checked; draft.BeforeScript = before.Text; draft.AfterScript = after.Text;
+            Guard.Connection(draft); Record = draft; return true;
         }
     }
 
@@ -207,6 +222,7 @@ namespace Toccato.Desktop
         public SettingsDialog(Settings original) : base("Configurações", "Use clientes oficiais instalados nesta máquina. Nenhum cliente externo está incluído.", 670)
         {
             Settings = Json.Clone(original); idle = new NumericUpDown { Minimum = 1, Maximum = 120, Value = Settings.IdleMinutes };
+            Add("Visual do aplicativo", Ui.Button("Temas e aparência...", (s, e) => { using (var d = new AppearanceDialog()) d.ShowDialog(this); }));
             Add("Bloquear em (min)", idle);
             AddTool("OpenSSH (ssh.exe)", Settings.SshPath, out ssh); AddTool("PuTTY", Settings.PuttyPath, out putty); AddTool("WinSCP", Settings.WinScpPath, out winscp); AddTool("TigerVNC Viewer", Settings.VncPath, out vnc); AddTool("AnyDesk", Settings.AnyDeskPath, out anydesk); AddTool("TeamViewer", Settings.TeamViewerPath, out teamviewer);
             var info = Ui.Label("Em branco: procurar nas pastas padrão. O bloqueio encerra RDP integrado, limpa o cofre da interface e pede novamente a senha-mestra. Clientes externos e VPNs continuam sob controle do Windows.", 9, Ui.Muted); info.MaximumSize = new Size(460, 0); Add("Sessões e bloqueio", info);

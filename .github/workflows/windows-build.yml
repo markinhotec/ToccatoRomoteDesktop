@@ -2,6 +2,7 @@ name: Windows build and security tests
 on:
   push:
     branches: [main]
+    paths-ignore: ['releases/**', 'docs/**', 'README.md']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -25,23 +26,36 @@ jobs:
       - name: Render demonstration
         shell: powershell
         run: |
-          $process = Start-Process '.\artifacts\portable\ToccatoDesktopManager.exe' -ArgumentList '--screenshot', "$PWD\artifacts\TDM-1.0.0-preview.png" -Wait -PassThru
-          if ($process.ExitCode -ne 0 -or -not (Test-Path '.\artifacts\TDM-1.0.0-preview.png')) { throw 'Falha na captura da interface.' }
+          $process = Start-Process '.\artifacts\1.0.1\portable\ToccatoDesktopManager.exe' -ArgumentList '--screenshot', "$PWD\artifacts\1.0.1\TDM-1.0.1-preview.png" -Wait -PassThru
+          if ($process.ExitCode -ne 0 -or -not (Test-Path '.\artifacts\1.0.1\TDM-1.0.1-preview.png')) { throw 'Falha na captura da interface.' }
+      - name: Render themes and appearance dialog
+        shell: powershell
+        run: |
+          foreach ($palette in @('Blue', 'Cyan', 'Graphite')) {
+            foreach ($mode in @('Light', 'Dark')) {
+              $image = "$PWD\artifacts\1.0.1\TDM-1.0.1-$palette-$mode.png"
+              $p = Start-Process '.\artifacts\1.0.1\portable\ToccatoDesktopManager.exe' -ArgumentList '--screenshot', $image, '--palette', $palette, '--mode', $mode -Wait -PassThru
+              if ($p.ExitCode -ne 0 -or -not (Test-Path $image)) { throw 'Falha no preview de tema.' }
+            }
+          }
+          $image = "$PWD\artifacts\1.0.1\TDM-1.0.1-Appearance.png"
+          $p = Start-Process '.\artifacts\1.0.1\portable\ToccatoDesktopManager.exe' -ArgumentList '--screenshot-appearance', $image, '--mode', 'Dark' -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or -not (Test-Path $image)) { throw 'Falha no preview de aparência.' }
       - name: Verify per-user installer and preservation of vault files
         shell: powershell
         run: |
           $target = Join-Path $env:TEMP 'TDM Install Test'
-          $process = Start-Process '.\artifacts\ToccatoDesktopManager-1.0.0-Setup.exe' -ArgumentList '/S', "/D=$target" -Wait -PassThru
+          $process = Start-Process '.\artifacts\1.0.1\ToccatoDesktopManager-1.0.1-Setup.exe' -ArgumentList '/S', "/D=$target" -Wait -PassThru
           if ($process.ExitCode -ne 0 -or -not (Test-Path "$target\ToccatoDesktopManager.exe")) { throw 'Falha no instalador silencioso.' }
           Set-Content "$target\preservar.tdmv" 'synthetic sentinel - no credentials'
           $process = Start-Process "$target\Desinstalar.exe" -ArgumentList '/S', "_?=$target" -Wait -PassThru
           if ($process.ExitCode -ne 0 -or (Test-Path "$target\ToccatoDesktopManager.exe") -or -not (Test-Path "$target\preservar.tdmv")) { throw 'A desinstalação não preservou o arquivo do usuário.' }
       - uses: actions/upload-artifact@v4
         with:
-          name: ToccatoDesktopManager-1.0.0-Windows
+          name: ToccatoDesktopManager-1.0.1-Windows
           if-no-files-found: error
           path: |
-            artifacts/ToccatoDesktopManager-1.0.0-Setup.exe
-            artifacts/ToccatoDesktopManager-1.0.0-Portable.zip
-            artifacts/SHA256SUMS_1_0_0.txt
-            artifacts/TDM-1.0.0-preview.png
+            artifacts/1.0.1/ToccatoDesktopManager-1.0.1-Setup.exe
+            artifacts/1.0.1/ToccatoDesktopManager-1.0.1-Portable.zip
+            artifacts/1.0.1/SHA256SUMS_1_0_1.txt
+            artifacts/1.0.1/TDM-1.0.1-*.png

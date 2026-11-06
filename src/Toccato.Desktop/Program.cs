@@ -12,8 +12,8 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Gerenciador local de conexões e credenciais")]
 [assembly: AssemblyCompany("Toccato")]
 [assembly: AssemblyProduct("Toccato Desktop Manager")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 [assembly: ComVisible(false)]
 
 namespace Toccato.Desktop
@@ -23,26 +23,40 @@ namespace Toccato.Desktop
         [STAThread]
         private static int Main(string[] args)
         {
-            using (var running = new Mutex(false, "Local\\ToccatoDesktopManager.Running")) return Run(args);
+            try { using (var running = new Mutex(false, "Local\\ToccatoDesktopManager.Running")) return Run(args); }
+            finally { ThemeManager.Shutdown(); }
         }
         private static int Run(string[] args)
         {
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
+            ThemeManager.Initialize();
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-            bool screenshot = args.Length == 2 && args[0] == "--screenshot";
+            bool screenshot = args.Contains("--screenshot") || args.Contains("--screenshot-appearance");
             Application.ThreadException += (s, e) => { if (screenshot) { Console.Error.WriteLine(e.Exception); Application.ExitThread(); } else Ui.Error(null, e.Exception); };
             try
             {
-                if (args.Length == 2 && args[0] == "--screenshot")
+                if (screenshot || args.Contains("--demo"))
                 {
-                    using (var form = new MainForm(VaultSession.Demo(DemoData.Create())))
+                    var prefs = ThemeManager.Preferences;
+                    string mode = Argument(args, "--mode"), palette = Argument(args, "--palette");
+                    ColorMode chosenMode; InstitutionalPalette chosenPalette;
+                    if (mode != null && Enum.TryParse<ColorMode>(mode, true, out chosenMode)) prefs.Mode = chosenMode;
+                    if (palette != null && Enum.TryParse<InstitutionalPalette>(palette, true, out chosenPalette)) prefs.Palette = chosenPalette;
+                    ThemeManager.Preview(prefs.Mode, prefs.Palette);
+                }
+                if (screenshot)
+                {
+                    string output = Argument(args, args.Contains("--screenshot-appearance") ? "--screenshot-appearance" : "--screenshot");
+                    if (String.IsNullOrWhiteSpace(output)) throw new ArgumentException("Informe o arquivo PNG de destino.");
+                    using (Form form = args.Contains("--screenshot-appearance") ? (Form)new AppearanceDialog() : new MainForm(VaultSession.Demo(DemoData.Create())))
                     {
                         form.Show(); Application.DoEvents(); form.Refresh(); Application.DoEvents();
-                        using (var bitmap = new Bitmap(form.Width, form.Height))
+                        Size size = Environment.OSVersion.Platform == PlatformID.Win32NT ? form.Size : form.ClientSize;
+                        using (var bitmap = new Bitmap(size.Width, size.Height))
                         {
                             if (Environment.OSVersion.Platform == PlatformID.Win32NT) form.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size));
-                            else using (var graphics = Graphics.FromImage(bitmap)) graphics.CopyFromScreen(form.Bounds.Location, Point.Empty, bitmap.Size);
-                            bitmap.Save(args[1], ImageFormat.Png);
+                            else using (var graphics = Graphics.FromImage(bitmap)) graphics.CopyFromScreen(form.PointToScreen(Point.Empty), Point.Empty, bitmap.Size);
+                            bitmap.Save(output, ImageFormat.Png);
                         }
                         form.Close();
                     }
@@ -62,6 +76,10 @@ namespace Toccato.Desktop
                 return 0;
             }
             catch (Exception e) { if (screenshot) Console.Error.WriteLine(e); else Ui.Error(null, e); return 1; }
+        }
+        private static string Argument(string[] args, string name)
+        {
+            int index = Array.IndexOf(args, name); return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
     }
 

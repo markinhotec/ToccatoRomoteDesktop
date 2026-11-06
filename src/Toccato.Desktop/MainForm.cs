@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace Toccato.Desktop
 {
-    public sealed class MainForm : Form
+    public sealed class MainForm : ThemedForm
     {
         private VaultSession vault;
         private VaultData Data { get { return vault.Data; } }
@@ -46,9 +46,8 @@ namespace Toccato.Desktop
 
         public MainForm(VaultSession session)
         {
-            vault = session; Text = "Toccato Desktop Manager 1.0.0 — " + Data.Title + (session.IsDemo ? " [DEMONSTRAÇÃO]" : "");
+            vault = session; Text = "Toccato Desktop Manager 1.0.1 — " + Data.Title + (session.IsDemo ? " [DEMONSTRAÇÃO]" : ""); Tag = ThemeRole.Canvas;
             Font = Ui.Font(); BackColor = Ui.Canvas; ForeColor = Ui.Ink; StartPosition = FormStartPosition.CenterScreen; MinimumSize = new Size(1120, 740); ClientSize = new Size(1440, 870); KeyPreview = true;
-            try { Icon = new Icon(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tdm.ico")); } catch { }
             BuildInterface(); RefreshData();
             heartbeat = new Timer { Interval = 1000 }; heartbeat.Tick += Heartbeat; heartbeat.Start();
             KeyDown += (s, e) =>
@@ -64,17 +63,17 @@ namespace Toccato.Desktop
 
         private void BuildInterface()
         {
-            var sidebar = new Panel { Dock = DockStyle.Left, Width = 230, BackColor = Ui.Navy, Padding = new Padding(14, 0, 14, 0) };
-            var brand = new Panel { Dock = DockStyle.Top, Height = 104 };
-            var mark = new Label { Text = "t", TextAlign = ContentAlignment.MiddleCenter, Font = Ui.Font(30, FontStyle.Bold), ForeColor = Color.White, BackColor = Ui.Blue, Bounds = new Rectangle(6, 24, 46, 48) };
-            brand.Controls.Add(mark); var brandTitle = Ui.Label("TOCCATO", 15, Color.White, true); brandTitle.Location = new Point(63, 25); brand.Controls.Add(brandTitle);
-            var brandSub = Ui.Label("DESKTOP MANAGER", 7.5f, Color.FromArgb(163, 183, 211), true); brandSub.Location = new Point(64, 54); brand.Controls.Add(brandSub);
+            var sidebar = new Panel { Dock = DockStyle.Left, Width = 230, BackColor = Ui.Navy, Padding = new Padding(14, 0, 14, 0), Tag = ThemeRole.Sidebar };
+            var brand = new Panel { Dock = DockStyle.Top, Height = 112 };
+            var logo = new PictureBox { Image = BrandAssets.Logo, SizeMode = PictureBoxSizeMode.Zoom, Bounds = new Rectangle(8, 22, 188, 52), AccessibleName = "Logo oficial Toccato" }; brand.Controls.Add(logo);
+            var brandSub = Ui.Label("DESKTOP MANAGER", 7.5f, null, true); brandSub.Tag = ThemeRole.SidebarMuted; brandSub.Location = new Point(10, 80); brand.Controls.Add(brandSub);
             var nav = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 170, FlowDirection = FlowDirection.TopDown, WrapContents = false };
             nav.Controls.Add(Nav("  Conexões", (s, e) => { tabs.SelectedTab = workspacePage; filter = "all"; activeClient = activeFolder = null; RefreshConnections(); }));
             nav.Controls.Add(Nav("  Credenciais", (s, e) => { tabs.SelectedTab = credentialsPage; RefreshCredentials(); }));
             nav.Controls.Add(Nav("  Auditoria", (s, e) => { tabs.SelectedTab = auditPage; RefreshAudit(); }));
             var treePanel = new Panel { Dock = DockStyle.Fill };
             var treeTitle = Ui.Label("CLIENTES E AMBIENTES", 8, Color.FromArgb(131, 153, 184), true); treeTitle.Dock = DockStyle.Top; treeTitle.Height = 34; treeTitle.Padding = new Padding(10, 8, 0, 0);
+            treeTitle.Tag = ThemeRole.SidebarMuted;
             clients = new TreeView { Dock = DockStyle.Fill, BorderStyle = BorderStyle.None, BackColor = Ui.Navy, ForeColor = Color.FromArgb(211, 221, 235), Font = Ui.Font(9), ItemHeight = 32, Indent = 14, ShowLines = false, ShowRootLines = false, HideSelection = false, FullRowSelect = true };
             clients.AfterSelect += (s, e) => { if (rebuilding) return; var tag = e.Node.Tag as FolderTag; activeClient = tag == null ? null : tag.ClientId; activeFolder = tag == null ? null : tag.Folder; filter = "all"; tabs.SelectedTab = workspacePage; RefreshConnections(); };
             clients.NodeMouseDoubleClick += (s, e) => { if (e.Node.Tag is FolderTag && ((FolderTag)e.Node.Tag).Folder == null) EditClient(((FolderTag)e.Node.Tag).ClientId); };
@@ -82,10 +81,10 @@ namespace Toccato.Desktop
             treePanel.Controls.Add(clients); treePanel.Controls.Add(treeTitle);
             var sideBottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 138, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0, 8, 0, 0) };
             sideBottom.Controls.Add(Nav("  + Novo cliente", (s, e) => EditClient())); sideBottom.Controls.Add(Nav("  Configurações", (s, e) => Configure()));
-            var version = Ui.Label("v1.0.0  /  LOCAL WORKSPACE", 7.5f, Color.FromArgb(121, 144, 174)); version.Margin = new Padding(12, 10, 0, 0); sideBottom.Controls.Add(version);
+            var version = Ui.Label("v1.0.1  /  LOCAL WORKSPACE", 7.5f, Color.FromArgb(121, 144, 174)); version.Tag = ThemeRole.SidebarMuted; version.Margin = new Padding(12, 10, 0, 0); sideBottom.Controls.Add(version);
             sidebar.Controls.Add(treePanel); sidebar.Controls.Add(sideBottom); sidebar.Controls.Add(nav); sidebar.Controls.Add(brand);
 
-            var main = new Panel { Dock = DockStyle.Fill, Padding = new Padding(30, 0, 30, 0) };
+            var main = new Panel { Dock = DockStyle.Fill, Padding = new Padding(30, 0, 30, 0), Tag = ThemeRole.Canvas };
             var top = new Panel { Dock = DockStyle.Top, Height = 92, BackColor = Ui.Canvas };
             var crumb = Ui.Label("WORKSPACE  /  " + (vault.IsDemo ? "DEMONSTRAÇÃO · DADOS FICTÍCIOS" : Data.Title.ToUpperInvariant()), 8, Ui.Muted, true); crumb.Location = new Point(0, 19); crumb.MaximumSize = new Size(520, 22); top.Controls.Add(crumb);
             var headline = Ui.Label("Seu ambiente, conectado.", 22, Ui.Ink, true); headline.Location = new Point(-2, 40); top.Controls.Add(headline);
@@ -100,8 +99,8 @@ namespace Toccato.Desktop
             searchPanel.Controls.Add(search);
             var quick = Ui.Button("Ctrl + Space", (s, e) => QuickSearch()); quick.Location = new Point(640, 20); quick.Anchor = AnchorStyles.Right | AnchorStyles.Top; quick.Width = 144; searchPanel.Controls.Add(quick);
             searchPanel.Resize += (s, e) => { search.Width = Math.Max(280, searchPanel.Width - 160); quick.Left = searchPanel.Width - 146; };
-            status = new Label { Dock = DockStyle.Bottom, Height = 42, Font = Ui.Font(8.5f), ForeColor = Ui.Muted, TextAlign = ContentAlignment.MiddleLeft };
-            tabs = new TabControl { Dock = DockStyle.Fill, Font = Ui.Font(9.5f), Padding = new Point(18, 10) };
+            status = new Label { Dock = DockStyle.Bottom, Height = 42, Font = Ui.Font(8.5f), ForeColor = Ui.Muted, TextAlign = ContentAlignment.MiddleLeft, Tag = ThemeRole.MutedText };
+            tabs = new ThemedTabControl { Dock = DockStyle.Fill, Font = Ui.Font(9.5f) };
             workspacePage = new TabPage("Conexões") { BackColor = Color.White, Padding = new Padding(12) }; credentialsPage = new TabPage("Cofre de credenciais") { BackColor = Color.White, Padding = new Padding(16) }; auditPage = new TabPage("Auditoria") { BackColor = Color.White, Padding = new Padding(16) };
             tabs.TabPages.AddRange(new[] { workspacePage, credentialsPage, auditPage });
             BuildConnections(); BuildCredentials(); BuildAudit();
@@ -110,18 +109,19 @@ namespace Toccato.Desktop
             var bar = new MenuStrip { Dock = DockStyle.Top, BackColor = Color.White, Font = Ui.Font(9), Padding = new Padding(8, 4, 8, 4) };
             var file = new ToolStripMenuItem("Cofre"); file.DropDownItems.Add("Abrir / criar outro cofre", null, (s, e) => LockWorkspace()); file.DropDownItems.Add("Backup criptografado", null, (s, e) => Backup()); file.DropDownItems.Add("Alterar senha-mestra", null, (s, e) => ChangePassword()); file.DropDownItems.Add("Bloquear    Ctrl+L", null, (s, e) => LockWorkspace()); file.DropDownItems.Add("Sair", null, (s, e) => Close());
             var tools = new ToolStripMenuItem("Ferramentas"); tools.DropDownItems.Add("Testar porta TCP", null, async (s, e) => await Diagnose(false)); tools.DropDownItems.Add("Ping", null, async (s, e) => await Diagnose(true)); tools.DropDownItems.Add("Consultar DNS", null, async (s, e) => await DnsLookup()); tools.DropDownItems.Add("PowerShell local", null, (s, e) => RunScript("", SelectedConnection())); tools.DropDownItems.Add("Configurar clientes externos", null, (s, e) => Configure());
-            var help = new ToolStripMenuItem("Ajuda"); help.DropDownItems.Add("Guia de instalação e uso", null, (s, e) => OpenGuide()); help.DropDownItems.Add("Sobre a v1.0", null, (s, e) => MessageBox.Show(this, "Toccato Desktop Manager 1.0.0\n\nCofre local individual e gerenciador de conexões.\n\nRDP integrado usa o componente do Windows. SSH, VNC, transferência de arquivos e acesso assistido usam clientes externos.\n\nPAM, SSO, MFA corporativo, gravação e bancos compartilhados ainda não estão implementados. Consulte a matriz de funcionalidades no guia.", "Sobre o TDM", MessageBoxButtons.OK, MessageBoxIcon.Information));
-            bar.Items.AddRange(new ToolStripItem[] { file, tools, help }); Controls.Add(bar); MainMenuStrip = bar;
+            var appearance = new ToolStripMenuItem("Exibir"); appearance.DropDownItems.Add("Temas e aparência...", null, (s, e) => { using (var d = new AppearanceDialog()) d.ShowDialog(this); });
+            var help = new ToolStripMenuItem("Ajuda"); help.DropDownItems.Add("Guia de instalação e uso", null, (s, e) => OpenGuide()); help.DropDownItems.Add("Sobre a v1.0.1", null, (s, e) => Ui.Message(this, "Toccato Desktop Manager 1.0.1\n\nIdentidade oficial Toccato, três paletas institucionais e modos Claro, Escuro e Automático.\n\nCofre local individual e gerenciador de conexões. RDP integrado usa o componente do Windows; outros protocolos usam clientes externos.\n\nPAM, SSO, MFA corporativo, gravação e bancos compartilhados ainda não estão implementados. Consulte a matriz no guia.", "Sobre o TDM"));
+            bar.Items.AddRange(new ToolStripItem[] { file, tools, appearance, help }); Controls.Add(bar); MainMenuStrip = bar;
         }
 
         private Button Nav(string title, EventHandler handler)
         {
-            var b = Ui.Button(title, handler); b.Width = 200; b.Height = 43; b.TextAlign = ContentAlignment.MiddleLeft; b.BackColor = Ui.Navy; b.ForeColor = Color.FromArgb(215, 225, 240); b.FlatAppearance.BorderSize = 0; b.FlatAppearance.MouseOverBackColor = Color.FromArgb(33, 54, 83); b.Margin = new Padding(0, 1, 0, 2); return b;
+            var b = Ui.Button(title, handler); b.Tag = ThemeRole.NavigationButton; Ui.StyleButton(b); b.Width = 200; b.Height = 43; b.TextAlign = ContentAlignment.MiddleLeft; b.Margin = new Padding(0, 1, 0, 2); return b;
         }
         private Panel Metric(string title, Color accent, out Label count)
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Margin = new Padding(0, 0, 12, 0) };
-            panel.Controls.Add(new Panel { Dock = DockStyle.Left, Width = 3, BackColor = accent });
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Surface, Margin = new Padding(0, 0, 12, 0), Tag = ThemeRole.Surface };
+            panel.Controls.Add(new Panel { Dock = DockStyle.Left, Width = 3, BackColor = accent, Tag = accent.ToArgb() == Ui.Blue.ToArgb() ? ThemeRole.AccentText : ThemeRole.Preserve });
             var caption = Ui.Label(title, 7.5f, Ui.Muted, true); caption.Location = new Point(16, 16); panel.Controls.Add(caption);
             count = Ui.Label("0", 26, Ui.Ink, true); count.Location = new Point(13, 36); panel.Controls.Add(count); return panel;
         }
@@ -132,7 +132,7 @@ namespace Toccato.Desktop
             {
                 string key = pair[1]; var b = Ui.Button(pair[0], (s, e) => { filter = key; activeClient = activeFolder = null; RefreshConnections(); }); b.Width = 104; b.Height = 32; filters.Controls.Add(b);
             }
-            var inspector = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 258, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(18, 10, 0, 10), BackColor = Color.FromArgb(249, 251, 254) };
+            var inspector = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 258, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(18, 10, 0, 10), Tag = ThemeRole.SurfaceAlt };
             inspector.Controls.Add(Ui.Label("DETALHES DA CONEXÃO", 7.5f, Ui.Muted, true));
             detailsName = Detail(inspector, "Selecione uma conexão", 15, true); detailsMeta = Detail(inspector, "", 9); detailsHost = Detail(inspector, "", 10); detailsCredential = Detail(inspector, "", 9); detailsTags = Detail(inspector, "", 9); detailsVpn = Detail(inspector, "", 9); detailsNotes = Detail(inspector, "", 9);
             connectButton = Ui.Button("Conectar", async (s, e) => await ConnectSelected(), true); connectButton.Width = 218; inspector.Controls.Add(connectButton);
@@ -157,13 +157,13 @@ namespace Toccato.Desktop
             actions.Controls.Add(Ui.Button("+ Nova credencial", (s, e) => EditCredential(), true)); actions.Controls.Add(Ui.Button("Editar", (s, e) => EditCredential(SelectedCredential()))); actions.Controls.Add(Ui.Button("Copiar senha · 20s", (s, e) => CopyPassword())); actions.Controls.Add(Ui.Button("Excluir", (s, e) => DeleteCredential()));
             credentials = Ui.Grid(); Ui.Column(credentials, "name", "NOME", 25); Ui.Column(credentials, "user", "USUÁRIO", 25); Ui.Column(credentials, "domain", "DOMÍNIO", 20); Ui.Column(credentials, "password", "SENHA", 15); Ui.Column(credentials, "links", "VÍNCULOS", 15);
             credentials.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) EditCredential(SelectedCredential()); };
-            var description = new Label { Text = "Credenciais vinculadas podem ser atualizadas uma única vez. A senha só é injetada automaticamente no RDP integrado.", Dock = DockStyle.Bottom, Height = 48, ForeColor = Ui.Muted, Font = Ui.Font(9), TextAlign = ContentAlignment.MiddleLeft };
+            var description = new Label { Text = "Credenciais vinculadas podem ser atualizadas uma única vez. A senha só é injetada automaticamente no RDP integrado.", Dock = DockStyle.Bottom, Height = 48, ForeColor = Ui.Muted, Font = Ui.Font(9), TextAlign = ContentAlignment.MiddleLeft, Tag = ThemeRole.MutedText };
             credentialsPage.Controls.Add(credentials); credentialsPage.Controls.Add(description); credentialsPage.Controls.Add(actions);
         }
         private void BuildAudit()
         {
             audit = Ui.Grid(); audit.RowTemplate.Height = 40; Ui.Column(audit, "time", "DATA / HORA LOCAL", 20); Ui.Column(audit, "operator", "OPERADOR WINDOWS", 22); Ui.Column(audit, "event", "EVENTO", 22); Ui.Column(audit, "target", "ALVO", 18); Ui.Column(audit, "result", "RESULTADO", 25);
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 52 }; actions.Controls.Add(Ui.Button("Atualizar", (s, e) => RefreshAudit())); actions.Controls.Add(Ui.Button("Verificar integridade", (s, e) => Safe(() => { AuditLog.Verify(Data.Audit); MessageBox.Show(this, "A cadeia local de eventos está íntegra. Este registro não substitui uma auditoria central independente.", "Auditoria local"); })));
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 52 }; actions.Controls.Add(Ui.Button("Atualizar", (s, e) => RefreshAudit())); actions.Controls.Add(Ui.Button("Verificar integridade", (s, e) => Safe(() => { AuditLog.Verify(Data.Audit); Ui.Message(this, "A cadeia local de eventos está íntegra. Este registro não substitui uma auditoria central independente.", "Auditoria local"); })));
             auditPage.Controls.Add(audit); auditPage.Controls.Add(actions);
         }
 
@@ -213,8 +213,14 @@ namespace Toccato.Desktop
                 if (c.Id == selected) connections.Rows[row].Selected = true;
             }
             if (connections.SelectedRows.Count > 0) connections.CurrentCell = connections.SelectedRows[0].Cells[0];
-            ShowDetails(); status.Text = (vault.IsDemo ? "DEMONSTRAÇÃO · Dados fictícios  |  " : "Cofre desbloqueado  ·  AES-256 + HMAC  |  ") + connections.Rows.Count + " conexões nesta visualização  ·  " + Data.Settings.IdleMinutes + " min para bloqueio por inatividade";
+            ShowDetails(); UpdateStatus();
         }
+        private void UpdateStatus()
+        {
+            if (status == null || vault == null || vault.Data == null) return;
+            status.Text = (vault.IsDemo ? "DEMONSTRAÇÃO · Dados fictícios  |  " : "Cofre desbloqueado · AES-256 + HMAC  |  ") + connections.Rows.Count + " conexões  ·  Bloqueio: " + Data.Settings.IdleMinutes + " min  ·  " + ThemeManager.PaletteName(ThemeManager.Preferences.Palette) + " / " + (ThemeManager.Current.Dark ? "Escuro" : "Claro") + (ThemeManager.Preferences.Mode == ColorMode.Automatic ? " (automático)" : "");
+        }
+        protected override void OnAppearanceChanged() { UpdateStatus(); }
         private void RefreshCredentials()
         {
             credentials.Rows.Clear();
@@ -251,7 +257,7 @@ namespace Toccato.Desktop
             {
                 var c = Data.Clients.FirstOrDefault(x => x.Id == activeClient); if (c == null) return;
                 if (Data.Connections.Any(x => x.ClientId == c.Id)) throw new InvalidOperationException("Mova ou exclua as conexões deste cliente antes de excluí-lo.");
-                if (MessageBox.Show(this, "Excluir o cliente " + c.Name + "?", "Excluir cliente", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                if (Ui.Message(this, "Excluir o cliente " + c.Name + "?", "Excluir cliente", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
                 Commit(v => v.Clients.RemoveAll(x => x.Id == c.Id), "client.deleted", c.Name); activeClient = activeFolder = null; RefreshData();
             });
         }
@@ -265,7 +271,7 @@ namespace Toccato.Desktop
         }
         private void DeleteConnection()
         {
-            Safe(() => { var c = SelectedConnection(); if (c == null) return; if (sessions.Any(x => x.Connection.Id == c.Id)) throw new InvalidOperationException("Feche o painel de sessão antes de excluir a conexão."); if (MessageBox.Show(this, "Excluir a conexão " + c.Name + "?", "Excluir conexão", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return; Commit(v => v.Connections.RemoveAll(x => x.Id == c.Id), "connection.deleted", c.Name); RefreshData(); });
+            Safe(() => { var c = SelectedConnection(); if (c == null) return; if (sessions.Any(x => x.Connection.Id == c.Id)) throw new InvalidOperationException("Feche o painel de sessão antes de excluir a conexão."); if (Ui.Message(this, "Excluir a conexão " + c.Name + "?", "Excluir conexão", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return; Commit(v => v.Connections.RemoveAll(x => x.Id == c.Id), "connection.deleted", c.Name); RefreshData(); });
         }
         private void Favorite() { Safe(() => { var c = SelectedConnection(); if (c == null) return; Commit(d => d.Connections.First(x => x.Id == c.Id).Favorite = !c.Favorite, "connection.favorite", c.Name); RefreshConnections(); }); }
         private void EditCredential(CredentialRecord original = null)
@@ -274,14 +280,14 @@ namespace Toccato.Desktop
         }
         private void DeleteCredential()
         {
-            Safe(() => { var c = SelectedCredential(); if (c == null) return; if (Data.Connections.Any(x => x.CredentialId == c.Id)) throw new InvalidOperationException("Remova os vínculos nas conexões antes de excluir esta credencial."); if (MessageBox.Show(this, "Excluir a credencial " + c.Name + "?", "Excluir credencial", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return; Commit(v => v.Credentials.RemoveAll(x => x.Id == c.Id), "credential.deleted", c.Name); RefreshData(); });
+            Safe(() => { var c = SelectedCredential(); if (c == null) return; if (Data.Connections.Any(x => x.CredentialId == c.Id)) throw new InvalidOperationException("Remova os vínculos nas conexões antes de excluir esta credencial."); if (Ui.Message(this, "Excluir a credencial " + c.Name + "?", "Excluir credencial", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return; Commit(v => v.Credentials.RemoveAll(x => x.Id == c.Id), "credential.deleted", c.Name); RefreshData(); });
         }
         private void CopyPassword()
         {
             Safe(() =>
             {
                 var c = SelectedCredential(); if (c == null || String.IsNullOrEmpty(c.Password)) return;
-                if (MessageBox.Show(this, "Copiar a senha de " + c.Name + " por 20 segundos?\n\nOutros aplicativos e o histórico/sincronização da área de transferência do Windows podem reter uma cópia. Prefira a injeção no RDP.", "Copiar senha", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                if (Ui.Message(this, "Copiar a senha de " + c.Name + " por 20 segundos?\n\nOutros aplicativos e o histórico/sincronização da área de transferência do Windows podem reter uma cópia. Prefira a injeção no RDP.", "Copiar senha", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
                 Log("credential.copy.requested", c.Name, "Cópia solicitada explicitamente"); Clipboard.SetText(c.Password); clipboardValue = c.Password; clipboardExpires = DateTime.UtcNow.AddSeconds(20);
             });
         }
@@ -293,13 +299,13 @@ namespace Toccato.Desktop
         private async Task ConnectSelected()
         {
             var c = SelectedConnection(); if (c == null || busy) return;
-            if (vault.IsDemo) { MessageBox.Show(this, "Este modo usa dados fictícios e não abre conexões. Inicie o TDM normalmente para criar seu cofre.", "Demonstração"); return; }
+            if (vault.IsDemo) { Ui.Message(this, "Este modo usa dados fictícios e não abre conexões. Inicie o TDM normalmente para criar seu cofre.", "Demonstração"); return; }
             busy = true; ShowDetails();
             SessionView session = null;
             try
             {
                 c = Json.Clone(c); var credential = Data.Credential(c.CredentialId); var plan = Connector.Plan(c, credential, Data.Settings);
-                if ((c.Kind == ConnectionKind.Telnet || c.Kind == ConnectionKind.FTP) && MessageBox.Show(this, c.Kind + " pode transmitir dados sem criptografia. Continuar para este destino?", "Protocolo legado", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+                if ((c.Kind == ConnectionKind.Telnet || c.Kind == ConnectionKind.FTP) && Ui.Message(this, c.Kind + " pode transmitir dados sem criptografia. Continuar para este destino?", "Protocolo legado", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
                 if (!String.IsNullOrWhiteSpace(c.BeforeScript) && !RunScript(c.BeforeScript, c)) return;
                 Log("connection.requested", c.Name, c.Kind + ": abertura solicitada");
                 if (!String.IsNullOrWhiteSpace(c.VpnProfile)) { status.Text = "Aguardando a VPN do Windows..."; await Connector.ConnectVpn(c.VpnProfile); if (closing || IsDisposed) return; Log("vpn.connected", c.VpnProfile, "rasdial retornou sucesso"); }
@@ -338,7 +344,7 @@ namespace Toccato.Desktop
         private void Detach(SessionView view)
         {
             if (view.Rdp == null || view.Detached != null) return;
-            view.Detached = new Form { Text = view.Connection.Name + " — TDM", Size = new Size(1200, 800), StartPosition = FormStartPosition.CenterScreen, Font = Ui.Font() };
+            view.Detached = new ThemedForm { Text = view.Connection.Name + " — TDM", Size = new Size(1200, 800), StartPosition = FormStartPosition.CenterScreen, Font = Ui.Font() };
             view.Page.Controls.Remove(view.Rdp); view.Detached.Controls.Add(view.Rdp); view.Detached.FormClosed += (s, e) => { if (!view.Removed) Safe(() => CloseSession(view, true)); }; view.Detached.Show(this);
             view.State.Text = "Sessão em janela separada. Mova para o monitor desejado.";
         }
@@ -363,34 +369,34 @@ namespace Toccato.Desktop
         private async Task Diagnose(bool ping)
         {
             var c = SelectedConnection(); if (c == null) return;
-            try { if (vault.IsDemo) throw new InvalidOperationException("Diagnósticos desabilitados em demonstração."); string host = c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Host : Guard.Host(c.Host); status.Text = "Testando conectividade..."; string result = ping ? await Connector.PingTest(host) : await Connector.TcpTest(host, c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Port : c.Port); if (closing) return; Log(ping ? "diagnostic.ping" : "diagnostic.tcp", c.Name, result); MessageBox.Show(this, result, "Diagnóstico"); }
+            try { if (vault.IsDemo) throw new InvalidOperationException("Diagnósticos desabilitados em demonstração."); string host = c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Host : Guard.Host(c.Host); status.Text = "Testando conectividade..."; string result = ping ? await Connector.PingTest(host) : await Connector.TcpTest(host, c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Port : c.Port); if (closing) return; Log(ping ? "diagnostic.ping" : "diagnostic.tcp", c.Name, result); Ui.Message(this, result, "Diagnóstico"); }
             catch (Exception ex) { if (!closing) Ui.Error(this, ex); }
         }
         private async Task DnsLookup()
         {
             var c = SelectedConnection(); if (c == null || vault.IsDemo) return;
-            try { string host = c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Host : Guard.Host(c.Host); var addresses = await Dns.GetHostAddressesAsync(host); if (closing) return; Log("diagnostic.dns", c.Name, "Consulta DNS concluída"); MessageBox.Show(this, String.Join(Environment.NewLine, addresses.Select(x => x.ToString())), "DNS · " + host); } catch (Exception ex) { if (!closing) Ui.Error(this, ex); }
+            try { string host = c.Kind == ConnectionKind.Web ? Guard.WebUri(c.Host).Host : Guard.Host(c.Host); var addresses = await Dns.GetHostAddressesAsync(host); if (closing) return; Log("diagnostic.dns", c.Name, "Consulta DNS concluída"); Ui.Message(this, String.Join(Environment.NewLine, addresses.Select(x => x.ToString())), "DNS · " + host); } catch (Exception ex) { if (!closing) Ui.Error(this, ex); }
         }
         private void Configure() { Safe(() => { using (var d = new SettingsDialog(Data.Settings)) if (d.ShowDialog(this) == DialogResult.OK) { Commit(v => v.Settings = d.Settings, "settings.saved", Data.Title); RefreshData(); } }); }
         private void Backup()
         {
-            Safe(() => { using (var d = new SaveFileDialog { Filter = "Cofre TDM (*.tdmv)|*.tdmv", FileName = "TDM_Backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".tdmv", OverwritePrompt = true }) if (d.ShowDialog(this) == DialogResult.OK) { Log("vault.backup.requested", Data.Title, "Backup criptografado solicitado"); vault.Backup(d.FileName); MessageBox.Show(this, "Backup criptografado criado. Ele usa a senha-mestra atual.", "Backup"); } });
+            Safe(() => { using (var d = new SaveFileDialog { Filter = "Cofre TDM (*.tdmv)|*.tdmv", FileName = "TDM_Backup_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".tdmv", OverwritePrompt = true }) if (d.ShowDialog(this) == DialogResult.OK) { Log("vault.backup.requested", Data.Title, "Backup criptografado solicitado"); vault.Backup(d.FileName); Ui.Message(this, "Backup criptografado criado. Ele usa a senha-mestra atual.", "Backup"); } });
         }
         private void ChangePassword()
         {
             if (vault.IsDemo) return;
-            Safe(() => { using (var d = new PasswordDialog()) if (d.ShowDialog(this) == DialogResult.OK) { vault.ChangePassword(d.Password); Log("vault.password.changed", Data.Title, "Senha-mestra alterada; backups anteriores usam senha anterior"); MessageBox.Show(this, "Senha alterada. Crie um novo backup e proteja as cópias antigas.", "Senha-mestra"); } });
+            Safe(() => { using (var d = new PasswordDialog()) if (d.ShowDialog(this) == DialogResult.OK) { vault.ChangePassword(d.Password); Log("vault.password.changed", Data.Title, "Senha-mestra alterada; backups anteriores usam senha anterior"); Ui.Message(this, "Senha alterada. Crie um novo backup e proteja as cópias antigas.", "Senha-mestra"); } });
         }
         private void OpenGuide()
         {
-            Safe(() => { string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Guia_TDM_1_0.html"); if (!File.Exists(path)) throw new FileNotFoundException("O guia não foi encontrado junto ao aplicativo."); Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); });
+            Safe(() => { string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Guia_TDM_1_0_1.html"); if (!File.Exists(path)) throw new FileNotFoundException("O guia não foi encontrado junto ao aplicativo."); Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); });
         }
         private void QuickSearch() { if (WindowState == FormWindowState.Minimized) WindowState = FormWindowState.Normal; Activate(); tabs.SelectedTab = workspacePage; search.Focus(); search.SelectAll(); }
         private void LockWorkspace() { if (busy || closing) return; Reopen = true; forceLock = true; Close(); }
         private void ClosingWorkspace(object sender, FormClosingEventArgs e)
         {
             if (busy && e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; return; }
-            if (!forceLock && sessions.Any(x => x.Rdp != null) && e.CloseReason == CloseReason.UserClosing && MessageBox.Show(this, "Encerrar as sessões RDP integradas e fechar o TDM?", "Fechar workspace", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) { e.Cancel = true; return; }
+            if (!forceLock && sessions.Any(x => x.Rdp != null) && e.CloseReason == CloseReason.UserClosing && Ui.Message(this, "Encerrar as sessões RDP integradas e fechar o TDM?", "Fechar workspace", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) { e.Cancel = true; return; }
             try
             {
                 Log(Reopen ? "vault.locked" : "vault.closed", Data.Title, "RDP integrado será desconectado; clientes externos não são encerrados");
