@@ -54,12 +54,15 @@ namespace Toccato.Desktop
             else if (grid != null)
             {
                 grid.BackgroundColor = c.Surface; grid.GridColor = c.Border; grid.ForeColor = c.Text; grid.BackColor = c.Surface;
-                grid.DefaultCellStyle.BackColor = c.Surface; grid.DefaultCellStyle.ForeColor = c.Text;
-                grid.DefaultCellStyle.SelectionBackColor = c.Selection; grid.DefaultCellStyle.SelectionForeColor = c.Text;
-                grid.AlternatingRowsDefaultCellStyle.BackColor = c.SurfaceAlt;
-                grid.ColumnHeadersDefaultCellStyle.BackColor = c.SurfaceAlt; grid.ColumnHeadersDefaultCellStyle.ForeColor = c.Muted;
-                grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = c.SurfaceAlt; grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = c.Text;
-                grid.RowHeadersDefaultCellStyle.BackColor = c.SurfaceAlt; grid.RowHeadersDefaultCellStyle.ForeColor = c.Muted;
+                // On .NET Framework the DefaultCellStyle getter may return an inherited copy.
+                // Reassign complete styles so a theme update is committed to the actual grid.
+                var cells = new DataGridViewCellStyle(grid.DefaultCellStyle) { BackColor = c.Surface, ForeColor = c.Text, SelectionBackColor = c.Selection, SelectionForeColor = c.Text };
+                grid.DefaultCellStyle = cells;
+                grid.RowsDefaultCellStyle = new DataGridViewCellStyle(cells);
+                grid.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle(cells) { BackColor = c.SurfaceAlt };
+                var headers = new DataGridViewCellStyle(grid.ColumnHeadersDefaultCellStyle) { BackColor = c.SurfaceAlt, ForeColor = c.Muted, SelectionBackColor = c.SurfaceAlt, SelectionForeColor = c.Text };
+                grid.ColumnHeadersDefaultCellStyle = headers;
+                grid.RowHeadersDefaultCellStyle = new DataGridViewCellStyle(headers);
                 grid.EnableHeadersVisualStyles = false;
             }
             else if (tree != null)

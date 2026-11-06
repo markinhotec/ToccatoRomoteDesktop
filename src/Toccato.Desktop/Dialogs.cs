@@ -40,7 +40,7 @@ namespace Toccato.Desktop
         public static DataGridView Grid()
         {
             var g = new DataGridView { Dock = DockStyle.Fill, BackgroundColor = Color.White, BorderStyle = BorderStyle.None, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, AllowUserToResizeRows = false, RowHeadersVisible = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false, AutoGenerateColumns = false, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal, GridColor = Canvas, EnableHeadersVisualStyles = false, ColumnHeadersHeight = 44, ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing };
-            g.DefaultCellStyle = new DataGridViewCellStyle { Font = Font(9.5f), ForeColor = Ink, BackColor = Color.White, SelectionBackColor = Color.FromArgb(231, 239, 255), SelectionForeColor = Ink, Padding = new Padding(10, 0, 4, 0) };
+            g.DefaultCellStyle = new DataGridViewCellStyle { Font = Font(9.5f), ForeColor = Ink, BackColor = Color.White, SelectionBackColor = Color.FromArgb(231, 239, 255), SelectionForeColor = Ink, Padding = new Padding(10, 0, 4, 0), Alignment = DataGridViewContentAlignment.MiddleLeft, WrapMode = DataGridViewTriState.False };
             g.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { Font = Font(9, FontStyle.Bold), ForeColor = Muted, BackColor = Color.FromArgb(248, 250, 253), Padding = new Padding(10, 0, 0, 0), SelectionBackColor = Canvas };
             g.RowTemplate.Height = 52; return g;
         }
