@@ -56,7 +56,7 @@ internal static class AppearanceTests
                 foreach (ColorMode mode in new[] { ColorMode.Light, ColorMode.Dark })
                 {
                     ThemeManager.Preview(mode, palette); Application.DoEvents();
-                    Check(grid.BackgroundColor.ToArgb() == ThemeManager.Current.Surface.ToArgb() && grid.DefaultCellStyle.ForeColor.ToArgb() == ThemeManager.Current.Text.ToArgb(), palette + " " + mode + " updates a live connection grid");
+                    Check(grid.BackgroundColor.ToArgb() == ThemeManager.Current.Surface.ToArgb() && grid.DefaultCellStyle.ForeColor.ToArgb() == ThemeManager.Current.Text.ToArgb(), palette + " " + mode + " updates a live connection grid [bg=" + grid.BackgroundColor.ToArgb().ToString("X8") + ", expected=" + ThemeManager.Current.Surface.ToArgb().ToString("X8") + ", fg=" + grid.DefaultCellStyle.ForeColor.ToArgb().ToString("X8") + ", expected=" + ThemeManager.Current.Text.ToArgb().ToString("X8") + "]");
                     Check(Field<Button>(main, "connectButton").ForeColor.ToArgb() == Color.White.ToArgb(), palette + " " + mode + " preserves primary button text");
                     var primary = Field<Button>(main, "connectButton");
                     Check(Contrast(primary.ForeColor, primary.FlatAppearance.MouseOverBackColor) >= 4.5 && Contrast(primary.ForeColor, primary.FlatAppearance.MouseDownBackColor) >= 4.5, palette + " " + mode + " keeps hover and pressed button states readable");

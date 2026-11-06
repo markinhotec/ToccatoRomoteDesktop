@@ -55,9 +55,10 @@ namespace Toccato.Desktop
         private static string preferencesPath;
         private static Func<bool> systemReader = ReadWindowsDarkMode;
         private static bool subscribed;
+        private static readonly object stateGate = new object();
         public static event EventHandler Changed;
-        public static ThemeColors Current { get { return current; } }
-        public static AppearancePreferences Preferences { get { return new AppearancePreferences { Mode = preferences.Mode, Palette = preferences.Palette }; } }
+        public static ThemeColors Current { get { lock (stateGate) return current; } }
+        public static AppearancePreferences Preferences { get { lock (stateGate) return new AppearancePreferences { Mode = preferences.Mode, Palette = preferences.Palette }; } }
         public static string PaletteName(InstitutionalPalette palette) { return palette == InstitutionalPalette.Cyan ? "Azul e ciano" : palette == InstitutionalPalette.Graphite ? "Azul e grafite" : "Azul institucional"; }
         public static string ModeName(ColorMode mode) { return mode == ColorMode.Light ? "Claro" : mode == ColorMode.Dark ? "Escuro" : "Automático (Windows)"; }
         public static void Initialize(string path = null, Func<bool> readSystemDark = null)
@@ -92,21 +93,26 @@ namespace Toccato.Desktop
                 if (File.Exists(preferencesPath)) File.Replace(temp, preferencesPath, null); else File.Move(temp, preferencesPath);
             }
             finally { if (File.Exists(temp)) File.Delete(temp); }
-            preferences = next; Refresh(true);
+            lock (stateGate) preferences = next; Refresh(true);
         }
         // Screenshot/demo overrides do not persist or change the Windows registry.
         public static void Preview(ColorMode mode, InstitutionalPalette palette)
         {
-            var next = new AppearancePreferences { Mode = mode, Palette = palette }; next.Validate(); preferences = next; Refresh(true);
+            var next = new AppearancePreferences { Mode = mode, Palette = palette }; next.Validate(); lock (stateGate) preferences = next; Refresh(true);
         }
-        public static void RefreshSystemTheme() { if (preferences.Mode == ColorMode.Automatic) Refresh(false); }
+        public static void RefreshSystemTheme() { Refresh(false); }
         private static void SystemPreferenceChanged(object sender, UserPreferenceChangedEventArgs e) { RefreshSystemTheme(); }
         private static void Refresh(bool force)
         {
-            bool dark = false; try { dark = systemReader(); } catch { }
-            var next = ThemeColors.Create(preferences.Mode, preferences.Palette, dark);
-            if (!force && next.Dark == current.Dark && next.Palette == current.Palette) return;
-            current = next; var handler = Changed; if (handler != null) handler(null, EventArgs.Empty);
+            lock (stateGate)
+            {
+                if (!force && preferences.Mode != ColorMode.Automatic) return;
+                bool dark = false; try { dark = systemReader(); } catch { }
+                var next = ThemeColors.Create(preferences.Mode, preferences.Palette, dark);
+                if (!force && next.Dark == current.Dark && next.Palette == current.Palette) return;
+                current = next;
+            }
+            var handler = Changed; if (handler != null) handler(null, EventArgs.Empty);
         }
         private static bool ReadWindowsDarkMode()
         {
@@ -150,15 +156,19 @@ namespace Toccato.Desktop
 
     public class ThemedForm : Form
     {
-        private bool listening;
+        private bool listening, loaded;
         public ThemedForm() { if (BrandAssets.Icon != null) Icon = BrandAssets.Icon; }
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            if (!listening) { ThemeManager.Changed += ThemeChanged; listening = true; }
-            ApplyTitleBar();
+            ApplyTitleBar(); if (loaded) ApplyAppearance();
         }
-        protected override void OnLoad(EventArgs e) { base.OnLoad(e); ApplyAppearance(); }
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e); loaded = true;
+            if (!listening) { ThemeManager.Changed += ThemeChanged; listening = true; }
+            ApplyAppearance();
+        }
         protected virtual void OnAppearanceChanged() { }
         public void ApplyAppearance()
         {
@@ -170,9 +180,9 @@ namespace Toccato.Desktop
             if (InvokeRequired) { try { BeginInvoke(new Action(ApplyAppearance)); } catch (InvalidOperationException) { } }
             else ApplyAppearance();
         }
-        protected override void OnHandleDestroyed(EventArgs e)
+        protected override void Dispose(bool disposing)
         {
-            if (listening) { ThemeManager.Changed -= ThemeChanged; listening = false; } base.OnHandleDestroyed(e);
+            if (disposing && listening) { ThemeManager.Changed -= ThemeChanged; listening = false; } base.Dispose(disposing);
         }
         protected override void WndProc(ref Message m)
         {
