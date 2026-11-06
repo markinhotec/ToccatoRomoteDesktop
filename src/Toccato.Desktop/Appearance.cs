@@ -69,7 +69,8 @@ namespace Toccato.Desktop
             {
                 if (File.Exists(preferencesPath) && new FileInfo(preferencesPath).Length <= 8192)
                 {
-                    var loaded = Json.Decode<AppearancePreferences>(File.ReadAllBytes(preferencesPath)); loaded.Validate(); preferences = loaded;
+                    var loaded = Json.Decode<AppearancePreferences>(File.ReadAllBytes(preferencesPath));
+                    if (loaded != null) { loaded.Validate(); preferences = loaded; }
                 }
             }
             catch (Exception ex) { if (!(ex is IOException || ex is UnauthorizedAccessException || ex is System.Runtime.Serialization.SerializationException || ex is ArgumentException || ex is FormatException)) throw; }

@@ -35,6 +35,7 @@ internal static class AppearanceTests
             systemDark = false; ThemeManager.Save(ColorMode.Dark, InstitutionalPalette.Graphite); ThemeManager.RefreshSystemTheme(); Check(ThemeManager.Current.Dark, "explicit dark overrides a light Windows theme");
             ThemeManager.Initialize(settings, () => systemDark); Check(ThemeManager.Preferences.Mode == ColorMode.Dark && ThemeManager.Preferences.Palette == InstitutionalPalette.Graphite, "palette and mode persist across initialization");
             File.WriteAllText(settings, "not valid JSON"); ThemeManager.Initialize(settings, () => systemDark); Check(ThemeManager.Preferences.Mode == ColorMode.Automatic, "corrupt preferences recover with safe defaults");
+            File.WriteAllText(settings, "null"); ThemeManager.Initialize(settings, () => systemDark); Check(ThemeManager.Preferences.Mode == ColorMode.Automatic, "null preferences recover without preventing startup");
             Check(BrandAssets.Logo != null && BrandAssets.Logo.Width == 392 && BrandAssets.Logo.Height == 108, "official wordmark is embedded without aspect changes");
             Check(BrandAssets.Icon != null && BrandAssets.Icon.Width >= 16, "official crest icon is embedded");
             foreach (InstitutionalPalette palette in Enum.GetValues(typeof(InstitutionalPalette)))
@@ -49,6 +50,8 @@ internal static class AppearanceTests
             {
                 main.Show(); Application.DoEvents();
                 var grid = Field<DataGridView>(main, "connections");
+                grid.CurrentCell = grid.Rows[0].Cells[0]; grid.Rows[0].Selected = true; Application.DoEvents();
+                Check(Field<Button>(main, "connectButton").Enabled, "selecting a connection enables its primary action on Windows and Mono");
                 foreach (InstitutionalPalette palette in Enum.GetValues(typeof(InstitutionalPalette)))
                 foreach (ColorMode mode in new[] { ColorMode.Light, ColorMode.Dark })
                 {
